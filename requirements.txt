@@ -1,0 +1,6 @@
+argparse
+paho-mqtt
+pyyaml
+requests
+simplejson
+simple-queue

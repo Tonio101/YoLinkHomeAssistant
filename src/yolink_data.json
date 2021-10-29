@@ -1,0 +1,99 @@
+{
+  "yoLink": {
+    "apiUrl": "",
+    "csId": "",
+    "csSecKey": "",
+    "mqtt": {
+      "url": "",
+      "port": 8003,
+      "topic": ""
+    },
+    "deviceSerialNumbers": [
+      {
+        "sn": "DEADBEEF1234567890DEADBEEF123456",
+        "__comment": "Front Door"
+      },
+      {
+        "sn": "DEADBEEF1234567890DEADBEEF123456",
+        "__comment": "Main Garage Door"
+      },
+      {
+        "sn": "DEADBEEF1234567890DEADBEEF123456",
+        "__comment": "Side Garage Door"
+      },
+      {
+        "sn": "DEADBEEF1234567890DEADBEEF123456",
+        "__comment": "Garage Door"
+      },
+      {
+        "sn": "DEADBEEF1234567890DEADBEEF123456",
+        "__comment": "Mail Box"
+      },
+      {
+        "sn": "DEADBEEF1234567890DEADBEEF123456",
+        "__comment": "Backyard Temperature Sensor"
+      },
+      {
+        "sn": "DEADBEEF1234567890DEADBEEF123456",
+        "__comment": "Side Gate Door"
+      },
+      {
+        "sn": "DEADBEEF1234567890DEADBEEF123456",
+        "__comment": "Family Room Door"
+      },
+      {
+        "sn": "DEADBEEF1234567890DEADBEEF123456",
+        "__comment": "Test Sensor"
+      },
+      {
+        "sn": "DEADBEEF1234567890DEADBEEF123456",
+        "__comment": "Master Bathroom Leak Sensor"
+      },
+      {
+        "sn": "DEADBEEF1234567890DEADBEEF123456",
+        "__comment": "Guest Bathroom Leak Sensor)"
+      } 
+    ]
+  },
+  "mqttProducer": {
+    "user": "",
+    "pasw": "",
+    "host": "",
+    "port": 1883
+  },
+  "influxDb": {
+    "url": "http://localhost:8086/write",
+    "auth": {
+      "user": "",
+      "pasw": ""
+    },
+    "dbName": "home_assistant",
+    "sensors": [
+      {
+        "type": "temperature_humidity",
+        "deviceId": "",
+        "name": "backyard",
+        "measurement": "weather",
+        "tagSet": "location=home",
+        "fieldSet": "temperature={},humidity={}"
+      },
+      {
+        "type": "leaky_toilet",
+        "deviceId": "",
+        "name": "Leak Sensor",
+        "measurement": "toilet",
+        "tagSet": "location=master_bathroom",
+        "fieldSet": "toilet_flush={}"
+      },
+      {
+        "type": "leaky_toilet",
+        "deviceId": "",
+        "name": "Leak Sensor",
+        "measurement": "toilet",
+        "tagSet": "location=guest_bathroom",
+        "fieldSet": "toilet_flush={}"
+      }
+    ],
+    "__comment": "https://docs.influxdata.com/influxdb/v1.8/write_protocols/line_protocol_tutorial"
+  }
+}

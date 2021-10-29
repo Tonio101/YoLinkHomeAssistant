@@ -1,0 +1,15 @@
+[Unit]
+Description=YoLink Home Assistant Service
+After=network.service
+
+[Service]
+ExecStart=/home/antonio/YoLinkHomeAssistant/start_yolinkhomeassistant.sh
+WorkingDirectory=/home/antonio/YoLinkHomeAssistant
+StandardOutput=inherit
+StandardError=inherit
+User=antonio
+Restart=on-failure
+RestartSec=60s
+
+[Install]
+WantedBy=multi-user.target
