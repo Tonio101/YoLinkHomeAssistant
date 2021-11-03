@@ -333,6 +333,11 @@ class YoLinkLeakDevice(YoLinkDevice):
         if self.get_device_event() == 'LeakSensor.setInterval':
             log.info("Alert interval event, discard")
             return ret
+        elif 'state' not in self.get_device_data():
+            log.info("State not in device data {0}".format(
+                self.get_device_data()
+            ))
+            return ret
 
         leak_state = self.get_state()
 
