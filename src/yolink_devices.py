@@ -14,6 +14,7 @@ class DeviceType(Enum):
     DOOR = 1
     TEMPERATURE = 2
     LEAK = 3
+    VIBRATION = 4
 
 
 class TempType(Enum):
@@ -33,10 +34,17 @@ class LeakEvent(Enum):
     FULL = 2
 
 
+class VibrateEvent(Enum):
+    UNKNOWN = -1
+    NO_VIBRATE = 1
+    VIBRATE = 2
+
+
 DEVICE_TYPE = {
     "DoorSensor": DeviceType.DOOR,
     "THSensor": DeviceType.TEMPERATURE,
-    "LeakSensor": DeviceType.LEAK
+    "LeakSensor": DeviceType.LEAK,
+    "VibrationSensor": DeviceType.VIBRATION
 }
 
 EVENT_STATE = {
@@ -44,13 +52,15 @@ EVENT_STATE = {
     "open": DoorEvent.OPEN,
     "closed": DoorEvent.CLOSE,
     "dry": LeakEvent.DRY,
-    "full": LeakEvent.FULL
+    "full": LeakEvent.FULL,
+    "vibrate": VibrateEvent.VIBRATE
 }
 
 DEVICE_TYPE_TO_STR = {
     DeviceType.DOOR: "Door Sensor",
     DeviceType.TEMPERATURE: "Temperature Sensor",
-    DeviceType.LEAK: "Leak Sensor"
+    DeviceType.LEAK: "Leak Sensor",
+    DeviceType.VIBRATION: "Vibration Sensor"
 }
 
 
@@ -308,7 +318,9 @@ class YoLinkLeakDevice(YoLinkDevice):
         return EVENT_STATE[self.get_device_data()['state']] == LeakEvent.FULL
 
     def get_state(self):
-        return EVENT_STATE[self.get_device_data()['state']]
+        if 'state' in self.get_device_data():
+            return EVENT_STATE[self.get_device_data()['state']]
+        return ''
 
     def __str__(self):
         to_str = ("Current State: {0}\n").format(
@@ -356,7 +368,7 @@ class YoLinkLeakDevice(YoLinkDevice):
             if leak_state == LeakEvent.DRY:
                 if self.prev_dry_time != 0:
                     curr_dry_time = datetime.now()
-                    if (curr_dry_time - self.prev_dry_time).seconds >= 30:
+                    if int(curr_dry_time - self.prev_dry_time).seconds >= 30:
                         # Leak or plug is not working correctly
                         log.info("Possible leak detected, notify")
                         self.influxdb_write_data(data="flush=1")
@@ -372,4 +384,67 @@ class YoLinkLeakDevice(YoLinkDevice):
                 self.curr_state = leak_state
 
         # return self.mqtt_server.publish(self.topic, self.get_event())
+        return ret
+
+
+class YoLinkVibrationDevice(YoLinkDevice):
+    """
+    Object representation for a YoLink Vibration Sensor
+    """
+    def __init__(self, device_data):
+        super().__init__(device_data)
+        self.curr_state = VibrateEvent.NO_VIBRATE
+        self.prev_vibrate_time = 0
+
+    def is_vibrating(self):
+        return (self.get_device_data()['state'] == 'alert')
+
+    def get_state(self):
+        if 'state' in self.get_device_data():
+            if self.is_vibrating():
+                return VibrateEvent.VIBRATE
+        return VibrateEvent.NO_VIBRATE
+
+    def __str__(self):
+        to_str = ("Current State: {0}\n").format(
+            str(self.get_state())
+        )
+
+        return super().__str__() + to_str
+
+    def process(self):
+        ret = 0
+
+        if 'state' not in self.get_device_data():
+            log.info("State not in device data {0}".format(
+                self.get_device_data()
+            ))
+            return ret
+
+        vibrate_state = self.get_state()
+
+        if self.curr_state == VibrateEvent.NO_VIBRATE:
+            if vibrate_state == VibrateEvent.VIBRATE:
+                self.prev_vibrate_time = datetime.now()
+                log.info("Vibration detection!")
+            elif vibrate_state == VibrateEvent.NO_VIBRATE:
+                log.info("No vibration")
+            self.curr_state = vibrate_state
+        elif self.curr_state == VibrateEvent.VIBRATE:
+            if vibrate_state == VibrateEvent.NO_VIBRATE:
+                log.info("Vibration stopped")
+                curr_t = datetime.now()
+                delta_t = (curr_t - self.prev_vibrate_time).total_seconds()
+                if int(delta_t) > 300:
+                    log.info("Notify that washer/dryer is done.")
+                    self.prev_vibrate_time = curr_t
+                    self.mqtt_server.publish(
+                        self.topic, "{} Finished".format(
+                            self.get_name()
+                        ))
+            elif vibrate_state == VibrateEvent.VIBRATE:
+                self.prev_vibrate_time = datetime.now()
+                log.info("Washer/Dyer still working...")
+            self.curr_state = vibrate_state
+
         return ret

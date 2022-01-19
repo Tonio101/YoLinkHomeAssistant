@@ -13,7 +13,7 @@ from mqtt_client import YoLinkConsumer, MQTTClient
 from influxdb_interface import InfluxDbClient
 from yolink_devices import YoLinkDeviceApi, YoLinkDoorDevice, \
                            YoLinkLeakDevice, YoLinkTempDevice, \
-                           DEVICE_TYPE, DeviceType
+                           DEVICE_TYPE, DeviceType, YoLinkVibrationDevice
 from yolink_mqtt_client import YoLinkMQTTClient
 log = Logger.getInstance().getLogger()
 
@@ -80,6 +80,8 @@ def yolink_device_init(data):
             yolink_device = YoLinkTempDevice(device_data=device_data)
         elif device_type == DeviceType.LEAK:
             yolink_device = YoLinkLeakDevice(device_data=device_data)
+        elif device_type == DeviceType.VIBRATION:
+            yolink_device = YoLinkVibrationDevice(device_data=device_data)
         else:
             raise NotImplementedError(("Device {0} is "
                                        "not implemented yet").format(
