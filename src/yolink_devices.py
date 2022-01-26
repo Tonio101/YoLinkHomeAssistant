@@ -152,6 +152,9 @@ class YoLinkDevice(object):
     def get_id(self):
         return self.id
 
+    def set_name(self, name):
+        self.name = name
+
     def get_name(self):
         return self.name
 
@@ -264,7 +267,7 @@ class YoLinkTempDevice(YoLinkDevice):
         self.temp = float(self.get_device_data()['temperature'])
 
         if type == TempType.FAHRENHEIT:
-            return ((self.temp * 1.8) + 32)
+            return round(((self.temp * 1.8) + 32), 2)
 
         return round(self.temp, 2)
 
@@ -391,10 +394,11 @@ class YoLinkVibrationDevice(YoLinkDevice):
     """
     Object representation for a YoLink Vibration Sensor
     """
-    def __init__(self, device_data):
+    def __init__(self, device_data, name=''):
         super().__init__(device_data)
+        super().set_name(name)
         self.curr_state = VibrateEvent.NO_VIBRATE
-        self.prev_vibrate_time = 0
+        self.vibrate_count = 0
 
     def is_vibrating(self):
         return (self.get_device_data()['state'] == 'alert')
@@ -425,26 +429,41 @@ class YoLinkVibrationDevice(YoLinkDevice):
 
         if self.curr_state == VibrateEvent.NO_VIBRATE:
             if vibrate_state == VibrateEvent.VIBRATE:
-                self.prev_vibrate_time = datetime.now()
-                log.info("Vibration detection!")
+                self.vibrate_count += 1
+                log.info("{} vibration detection!".format(
+                    self.get_name()
+                ))
             elif vibrate_state == VibrateEvent.NO_VIBRATE:
-                log.info("No vibration")
+                self.vibrate_count = 0
+                log.info("No {} vibration".format(
+                    self.get_name()
+                ))
             self.curr_state = vibrate_state
         elif self.curr_state == VibrateEvent.VIBRATE:
             if vibrate_state == VibrateEvent.NO_VIBRATE:
-                log.info("Vibration stopped")
-                curr_t = datetime.now()
-                delta_t = (curr_t - self.prev_vibrate_time).total_seconds()
-                if int(delta_t) > 300:
-                    log.info("Notify that washer/dryer is done.")
-                    self.prev_vibrate_time = curr_t
+                log.info("{} vibration stopped, current count: {}".format(
+                    self.get_name(),
+                    self.vibrate_count
+                ))
+                if self.get_device_event() == 'VibrationSensor.StatusChange' \
+                   and self.vibrate_count >= 20:
+                    log.info("Notify that {} is done [{}]".format(
+                        self.get_name(),
+                        self.vibrate_count
+                    ))
                     self.mqtt_server.publish(
-                        self.topic, "{} Finished".format(
+                        self.topic,
+                        "{} Finished".format(
                             self.get_name()
-                        ))
+                        )
+                    )
+                    self.vibrate_count = 0
             elif vibrate_state == VibrateEvent.VIBRATE:
-                self.prev_vibrate_time = datetime.now()
-                log.info("Washer/Dyer still working...")
+                self.vibrate_count += 1
+                log.info("{} still working [{}]".format(
+                    self.get_name(),
+                    self.vibrate_count
+                ))
             self.curr_state = vibrate_state
 
         return ret

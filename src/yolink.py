@@ -81,7 +81,9 @@ def yolink_device_init(data):
         elif device_type == DeviceType.LEAK:
             yolink_device = YoLinkLeakDevice(device_data=device_data)
         elif device_type == DeviceType.VIBRATION:
-            yolink_device = YoLinkVibrationDevice(device_data=device_data)
+            yolink_device = \
+                YoLinkVibrationDevice(device_data=device_data,
+                                      name=serial_num['name'])
         else:
             raise NotImplementedError(("Device {0} is "
                                        "not implemented yet").format(
