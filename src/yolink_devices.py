@@ -446,7 +446,7 @@ class YoLinkVibrationDevice(YoLinkDevice):
                     self.vibrate_count
                 ))
                 if self.get_device_event() == 'VibrationSensor.StatusChange' \
-                   and self.vibrate_count >= 20:
+                   and self.vibrate_count >= 15:
                     log.info("Notify that {} is done [{}]".format(
                         self.get_name(),
                         self.vibrate_count
