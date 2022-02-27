@@ -48,7 +48,8 @@ DEVICE_TYPE = {
 }
 
 EVENT_STATE = {
-    "normal": DoorEvent.UNKNOWN,
+    "normal": -1,
+    "error": -1,
     "open": DoorEvent.OPEN,
     "closed": DoorEvent.CLOSE,
     "dry": LeakEvent.DRY,
@@ -311,7 +312,6 @@ class YoLinkLeakDevice(YoLinkDevice):
     def __init__(self, device_data):
         super().__init__(device_data)
         self.curr_state = LeakEvent.FULL
-        self.prev_dry_time = 0
         self.influxdb_client = None
 
     def is_water_exhausted(self):
@@ -362,29 +362,20 @@ class YoLinkLeakDevice(YoLinkDevice):
                     self.get_name()
                 ))
                 self.influxdb_write_data(data="flush=1")
-                self.prev_dry_time = datetime.now()
-                self.curr_state = leak_state
             elif leak_state == LeakEvent.FULL:
                 self.influxdb_write_data(data="flush=0")
-                self.curr_state = leak_state
+            self.curr_state = leak_state
         elif self.curr_state == LeakEvent.DRY:
             if leak_state == LeakEvent.DRY:
-                if self.prev_dry_time != 0:
-                    curr_dry_time = datetime.now()
-                    if int(curr_dry_time - self.prev_dry_time).seconds >= 30:
-                        # Leak or plug is not working correctly
-                        log.info("Possible leak detected, notify")
-                        self.influxdb_write_data(data="flush=1")
-                        ret = self.mqtt_server.publish(
-                                    self.topic, "LeakDetected")
-                    self.prev_dry_time = curr_dry_time
+                log.info("Possible leak detected, notify")
+                self.influxdb_write_data(data="flush=1")
+                ret = self.mqtt_server.publish(self.topic, "LeakDetected")
             elif leak_state == LeakEvent.FULL:
                 log.info("Toilet [{0}] Water Back To Normal".format(
                     self.get_name()
                 ))
                 self.influxdb_write_data(data="flush=0")
-                self.prev_dry_time = 0
-                self.curr_state = leak_state
+            self.curr_state = leak_state
 
         # return self.mqtt_server.publish(self.topic, self.get_event())
         return ret
