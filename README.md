@@ -44,3 +44,10 @@ Add your credentials and the IoT device(s) serial number to `yolink_data.yml`.
 ```bash
 /usr/bin/python3 yolink.py --config yolink_data.yml
 ```
+
+## Create Service
+
+sudo cp yolinkha.service /etc/systemd/system/
+sudo systemctl enable yolinkha.service
+sudo systemctl start yolinkhome.service
+sudo systemctl status yolinkha.service
