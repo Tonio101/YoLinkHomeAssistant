@@ -1,3 +1,5 @@
+[Deprecated] Use YoLink API V2: https://github.com/Tonio101/YoLinkAPI_V2
+
 # YoLinkApi
 
 Simple script that will integrate to YoLink IoT devices via MQTT protocol.
